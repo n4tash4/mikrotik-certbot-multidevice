@@ -1,0 +1,28 @@
+:local tag "@TAG@"
+:local leaf ($tag . "-fullchain.pem_0")
+
+/certificate import file-name=($tag . "-fullchain.pem") passphrase=""
+/certificate import file-name=($tag . "-privkey.pem") passphrase=""
+
+:if ([:len [/certificate find where name=$leaf and private-key=yes]] != 1) do={
+    :error "certbot-multidevice: private key did not attach to the imported certificate"
+}
+/certificate set [/certificate find where name=$leaf] name=$tag
+
+:foreach s in=@SERVICES@ do={
+    :do {
+        /ip service set [/ip service find where name=$s] certificate=$tag
+    } on-error={
+        :put "certbot-multidevice: WARN could not set certificate on service $s"
+    }
+}
+
+:local tl [:len $tag]
+:foreach c in=[/certificate find where name~"^le-"] do={
+    :local n [/certificate get $c name]
+    :if ([:pick $n 0 $tl] != $tag) do={
+        /certificate remove $c
+    }
+}
+
+:put "CERTBOT_DEPLOY_OK $tag"

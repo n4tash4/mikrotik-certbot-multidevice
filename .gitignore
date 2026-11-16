@@ -1,0 +1,5 @@
+secrets/
+
+rsc/secrets.local.rsc
+
+*.tar
